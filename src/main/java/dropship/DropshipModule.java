@@ -20,8 +20,10 @@ import dropship.logging.Logger;
 import java.io.PrintStream;
 import java.lang.management.ManagementFactory;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Scanner;
 
 import static dropship.Preconditions.checkNotNull;
 
@@ -53,8 +55,14 @@ final class DropshipModule {
   MavenArtifactResolution.ArtifactResolutionBuilder provideArtifactResolutionBuilder(Settings settings, Logger logger) {
     String override = settings.mavenRepoUrl();
     if (override != null) {
+      List<String> urls = new ArrayList<String>();
+      Scanner tokenizer = new Scanner(override).useDelimiter(",");
+      while(tokenizer.hasNext()) {
+        urls.add(tokenizer.next());
+      }
+
       logger.info("Will load artifacts from %s", override);
-      return MavenArtifactResolution.using(settings, logger, override);
+      return MavenArtifactResolution.using(settings, logger, urls);
     } else {
       logger.info("Loading artifacts from maven central repo");
       return MavenArtifactResolution.usingCentralRepo(settings, logger);

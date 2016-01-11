@@ -59,6 +59,7 @@ import java.security.GeneralSecurityException;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -308,10 +309,12 @@ final class MavenArtifactResolution {
         return session;
       }
 
+      String repositoryPolicy = settings.ignoreChecksum() ? RepositoryPolicy.CHECKSUM_POLICY_IGNORE : RepositoryPolicy.CHECKSUM_POLICY_FAIL;
+
       MavenRepositorySystemSession session = new MavenRepositorySystemSession();
       session.setOffline(false);
       session.setRepositoryListener(logger.listener());
-      session.setChecksumPolicy(RepositoryPolicy.CHECKSUM_POLICY_FAIL);
+      session.setChecksumPolicy(repositoryPolicy);
       session.setIgnoreInvalidArtifactDescriptor(false);
       session.setIgnoreMissingArtifactDescriptor(false);
       session.setNotFoundCachingEnabled(false);
@@ -348,8 +351,22 @@ final class MavenArtifactResolution {
   }
 
   static ArtifactResolutionBuilder using(Settings settings, Logger logger, String url) {
-    RemoteRepository custom = new RemoteRepository("custom", "default", url);
-    return new ArtifactResolutionBuilder(settings, logger, custom);
+    return using(settings, logger, Collections.singletonList(url));
+  }
+
+  static ArtifactResolutionBuilder using(Settings settings, Logger logger, List<String> urls) {
+    RemoteRepository[] remoteRepositories = new RemoteRepository[urls.size()];
+
+    if(urls.size() == 1) {
+      remoteRepositories[0] = new RemoteRepository("custom", "default", urls.get(0));
+    } else {
+      int i = 0;
+
+      for (String url : urls) {
+        remoteRepositories[i] = new RemoteRepository("custom_" + i++, "default", url);
+      }
+    }
+    return new ArtifactResolutionBuilder(settings, logger, remoteRepositories);
   }
 
   static ArtifactResolutionBuilder usingCentralRepo(Settings settings, Logger logger) {
