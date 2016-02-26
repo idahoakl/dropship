@@ -131,6 +131,10 @@ public abstract class Settings {
     }
   }
 
+  public boolean ignoreChecksum() {
+    return "true".equalsIgnoreCase(loadProperty("dropship.ignore-checksum", "false"));
+  }
+
   /** Returns true if dropship should run in offline mode. */
   public boolean offlineMode() {
     return this.offlineMode || "true".equalsIgnoreCase(loadProperty("dropship.offline", "false"));

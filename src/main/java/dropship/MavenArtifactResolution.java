@@ -48,6 +48,7 @@ import org.sonatype.aether.util.graph.PreorderNodeListGenerator;
 import java.io.File;
 import java.net.URL;
 import java.net.URLClassLoader;
+import java.util.Collections;
 import java.util.List;
 
 import static com.google.common.base.Preconditions.checkArgument;
@@ -196,9 +197,11 @@ final class MavenArtifactResolution {
     private RepositorySystemSession newSession(RepositorySystem system) {
       MavenRepositorySystemSession session = new MavenRepositorySystemSession();
 
+      String checksumPolicy = settings.ignoreChecksum() ? RepositoryPolicy.CHECKSUM_POLICY_IGNORE : RepositoryPolicy.CHECKSUM_POLICY_FAIL;
+
       session.setOffline(settings.offlineMode());
       session.setRepositoryListener(logger.listener());
-      session.setChecksumPolicy(RepositoryPolicy.CHECKSUM_POLICY_FAIL);
+      session.setChecksumPolicy(checksumPolicy);
       session.setIgnoreInvalidArtifactDescriptor(false);
       session.setIgnoreMissingArtifactDescriptor(false);
       session.setNotFoundCachingEnabled(false);
@@ -224,8 +227,22 @@ final class MavenArtifactResolution {
   }
 
   static ArtifactResolutionBuilder using(Settings settings, Logger logger, String url) {
-    RemoteRepository custom = new RemoteRepository("custom", "default", url);
-    return new ArtifactResolutionBuilder(settings, logger, custom);
+    return using(settings, logger, Collections.singletonList(url));
+  }
+
+  static ArtifactResolutionBuilder using(Settings settings, Logger logger, List<String> urls) {
+    RemoteRepository[] remoteRepositories = new RemoteRepository[urls.size()];
+
+    if(urls.size() == 1) {
+      remoteRepositories[0] = new RemoteRepository("custom", "default", urls.get(0));
+    } else {
+      int i = 0;
+
+      for (String url : urls) {
+        remoteRepositories[i] = new RemoteRepository("custom_" + i++, "default", url);
+      }
+    }
+    return new ArtifactResolutionBuilder(settings, logger, remoteRepositories);
   }
 
   static ArtifactResolutionBuilder usingCentralRepo(Settings settings, Logger logger) {

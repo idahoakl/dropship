@@ -27,6 +27,9 @@ import javax.inject.Named;
 import java.io.PrintStream;
 import java.lang.management.ManagementFactory;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Scanner;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -71,8 +74,14 @@ final class DropshipModule {
   MavenArtifactResolution.ArtifactResolutionBuilder provideArtifactResolutionBuilder(Settings settings, Logger logger) {
     Optional<String> override = settings.mavenRepoUrl();
     if (override.isPresent()) {
+      List<String> urls = new ArrayList<String>();
+      Scanner tokenizer = new Scanner(override.get()).useDelimiter(",");
+      while(tokenizer.hasNext()) {
+        urls.add(tokenizer.next());
+      }
+
       logger.info("Will load artifacts from %s", override);
-      return MavenArtifactResolution.using(settings, logger, override.get());
+      return MavenArtifactResolution.using(settings, logger, urls);
     } else {
       logger.info("Loading artifacts from maven central repo");
       return MavenArtifactResolution.usingCentralRepo(settings, logger);
